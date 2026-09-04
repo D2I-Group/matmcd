@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MATMCD — Exploring Multi-Modal Data with Tool-Augmented LLM Agents for Precise Causal Discovery</title>
+<meta name="description" content="MATMCD (Findings of ACL 2025) is a multi-agent system powered by tool-augmented LLMs that explores multi-modal data — web documents and logs — for precise causal discovery.">
+<meta name="author" content="ChengAo Shen, Zhengzhang Chen, Dongsheng Luo, Dongkuan Xu, Haifeng Chen, Jingchao Ni">
+<meta name="keywords" content="causal discovery, LLM agents, multi-agent system, multi-modal data, tool-augmented LLMs, root cause analysis, AIOps, ACL 2025, MATMCD">
+<link rel="canonical" href="https://d2i-group.github.io/matmcd/">
+
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://d2i-group.github.io/matmcd/">
+<meta property="og:title" content="MATMCD: Exploring Multi-Modal Data with Tool-Augmented LLM Agents for Precise Causal Discovery">
+<meta property="og:description" content="Findings of ACL 2025 — a Data Augmentation agent retrieves modality-augmented data, and a Causal Constraint agent integrates it for knowledge-driven reasoning.">
+<meta property="og:image" content="https://d2i-group.github.io/matmcd/assets/fig2.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="MATMCD (Findings of ACL 2025)">
+<meta name="twitter:description" content="Multi-modal data enhanced causal discovery with tool-augmented LLM agents.">
+<meta name="twitter:image" content="https://d2i-group.github.io/matmcd/assets/fig2.png">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23f6f5f1'/><g stroke='%23c8102e' stroke-width='7' stroke-linecap='round'><path d='M26 30 L26 70'/><path d='M34 24 L68 44'/><path d='M34 76 L68 56'/></g><circle cx='26' cy='20' r='9' fill='%23c8102e'/><circle cx='26' cy='80' r='9' fill='%23c8102e'/><circle cx='76' cy='50' r='9' fill='%23c8102e'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="static/css/style.css">
+
+<script>
+  (function () {
+    var t = localStorage.getItem("mc-theme");
+    document.documentElement.setAttribute(
+      "data-theme", t || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+    var l = localStorage.getItem("mc-lang") || "en";
+    document.documentElement.setAttribute("data-lang", l);
+    if (l === "zh") document.documentElement.setAttribute("lang", "zh-CN");
+  })();
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ScholarlyArticle",
+  "name": "Exploring Multi-Modal Data with Tool-Augmented LLM Agents for Precise Causal Discovery",
+  "author": [
+    {"@type":"Person","name":"ChengAo Shen"},   {"@type":"Person","name":"Zhengzhang Chen"},
+    {"@type":"Person","name":"Dongsheng Luo"},  {"@type":"Person","name":"Dongkuan Xu"},
+    {"@type":"Person","name":"Haifeng Chen"},   {"@type":"Person","name":"Jingchao Ni"}
+  ],
+  "url": "https://d2i-group.github.io/matmcd/",
+  "sameAs": "https://arxiv.org/abs/2412.13667"
+}
+</script>
+</head>
+
+<body>
+
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <a class="wordmark" href="#top">MATMCD</a>
+    <div class="nav-links">
+      <a href="#overview" data-zh="概览">Overview</a>
+      <a href="#method" data-zh="方法">Method</a>
+      <a href="#results" data-zh="结果">Results</a>
+      <a href="#ablation" data-zh="消融">Ablation</a>
+      <a href="#rca" data-zh="根因分析">Root cause</a>
+      <a href="#cite" data-zh="引用">Cite</a>
+    </div>
+    <div class="nav-tools">
+      <button class="lang-btn" id="lang-toggle" aria-label="Switch language">
+        <span class="lang-en">中文</span><span class="lang-zh">EN</span>
+      </button>
+      <button class="theme-btn" id="theme-toggle" aria-label="Switch colour theme">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+      <button class="menu-btn" id="menu-toggle" aria-label="Sections" aria-expanded="false">
+        <svg class="icon-bars" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="tags">
+    <span class="tag accent" data-zh="ACL 2025 · Findings">Findings of ACL 2025</span>
+    <span class="tag" data-zh="因果发现">Causal Discovery</span>
+    <span class="tag" data-zh="大模型智能体">LLM Agents</span>
+    <span class="tag" data-zh="多模态数据">Multi-Modal Data</span>
+    <span class="tag" data-zh="AIOps">AIOps</span>
+  </div>
+
+  <h1>MATMCD</h1>
+  <p class="standfirst" data-zh="用工具增强的大模型智能体探索多模态数据<br class=&quot;lb&quot;>以实现精准的因果发现">
+    Exploring Multi-Modal Data with Tool-Augmented LLM Agents<br class="lb">
+    for Precise Causal Discovery
+  </p>
+
+  <p class="people">
+    <a href="https://chengaoshen.com/">ChengAo Shen</a><sup>1</sup>,
+    Zhengzhang Chen<sup>2</sup>,
+    <a href="https://dluoedu.github.io/">Dongsheng Luo</a><sup>3</sup>,
+    Dongkuan Xu<sup>4</sup>,
+    <a href="https://www.nec-labs.com/research/data-science-system-security/people/haifeng-chen/">Haifeng Chen</a><sup>2</sup>,
+    <a href="https://nijingchao.github.io/">Jingchao Ni</a><sup>1</sup>
+  </p>
+  <p class="places" data-zh="<sup>1</sup>休斯敦大学 &nbsp; <sup>2</sup>NEC 美国实验室 &nbsp; <sup>3</sup>佛罗里达国际大学 &nbsp; <sup>4</sup>北卡罗来纳州立大学">
+    <sup>1</sup>University of Houston &nbsp; <sup>2</sup>NEC Laboratories America &nbsp;
+    <sup>3</sup>Florida International University &nbsp; <sup>4</sup>North Carolina State University
+  </p>
+
+  <div class="actions">
+    <a class="btn primary" href="https://aclanthology.org/2025.findings-acl.36.pdf">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+      <span data-zh="论文">Paper</span>
+    </a>
+    <a class="btn" href="https://arxiv.org/abs/2412.13667">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      arXiv
+    </a>
+    <a class="btn" href="https://github.com/D2I-Group/matmcd">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.73.5.5 5.73.5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.2 1.77 1.2 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.19-3.1-.12-.3-.52-1.47.11-3.06 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.24 2.76.12 3.05.74.82 1.19 1.85 1.19 3.11 0 4.43-2.7 5.41-5.27 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12C23.5 5.73 18.27.5 12 .5z"/></svg>
+      <span data-zh="代码">Code</span>
+    </a>
+    <a class="btn" href="#cite">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h4v6a4 4 0 0 1-4 4M15 7h4v6a4 4 0 0 1-4 4"/></svg>
+      BibTeX
+    </a>
+  </div>
+
+  <a class="scroll-cue" href="#overview" aria-label="Scroll to the overview">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+  </a>
+</header>
+
+<section class="band" id="overview">
+  <div class="band-inner">
+    <div class="band-label" data-zh="概览">Overview</div>
+    <div class="band-body">
+      <h2 data-zh="为因果图补上第二种模态">A second modality for the causal graph</h2>
+
+      <div class="prose">
+        <figure class="inset">
+          <div class="plate">
+            <img src="assets/fig1.png" alt="An illustration of the general process of LLM based causal discovery.">
+          </div>
+          <figcaption data-zh="基于大模型的因果发现的一般流程示意：(a) 由 SCD 算法估计出一个因果图；(b) 依据该图生成提示；(c) 大模型对因果结构进行推理；(d) 根据大模型的回答对图加以修正。">
+            An illustration of the general process of LLM based causal discovery: (a) a causal graph is
+            estimated by an SCD algorithm; (b) a prompt is generated with respect to the graph; (c) LLMs
+            reason about the causal structures; (d) the graph is refined based on the LLM response.
+          </figcaption>
+        </figure>
+        <p data-zh="因果发现是智能健康、AI 药物发现与 AIOps 等诸多领域决策的必要基础。传统的统计因果发现方法虽已相当成熟，却主要依赖观测数据，往往忽略因果关系中固有的语义线索。大语言模型的出现，为利用语义线索开展知识驱动的因果发现提供了一条经济可行的途径，但大模型在因果发现方向的发展仍落后于其他领域，尤其是在多模态数据的探索方面。">
+          Causal discovery is an imperative foundation for decision-making across domains, such as
+          smart health, AI for drug discovery and AIOps. Traditional statistical causal discovery
+          methods, while well-established, predominantly rely on observational data and often
+          overlook the semantic cues inherent in cause-and-effect relationships. The advent of Large
+          Language Models has ushered in an affordable way of leveraging the semantic cues for
+          knowledge-driven causal discovery, but the development of LLMs for causal discovery lags
+          behind other areas, particularly in the exploration of multi-modal data.
+        </p>
+        <p data-zh="为弥补这一空白，我们提出 <strong>MATMCD</strong>——一个由工具增强的大模型驱动的多智能体系统。MATMCD 有两个关键智能体：负责检索并处理模态增强数据的数据增强智能体，以及整合多模态数据进行知识驱动推理的因果约束智能体。所提出的内部机制设计确保了智能体之间的顺利协作。我们在七个数据集上的实证研究表明，多模态增强的因果发现具有显著潜力。">
+          To bridge the gap, we introduce <strong>MATMCD</strong>, a multi-agent system powered by
+          tool-augmented LLMs. MATMCD has two key agents: a Data Augmentation agent that retrieves
+          and processes modality-augmented data, and a Causal Constraint agent that integrates
+          multi-modal data for knowledge-driven reasoning. The proposed design of the inner-workings
+          ensures successful cooperation of the agents. Our empirical study across seven datasets
+          suggests the significant potential of multi-modality enhanced causal discovery.
+        </p>
+        <p data-zh="既有的混合式因果发现方法，通常把某个 SCD 算法产生的先验因果图，连同变量名、数据集标题等元数据一并作为上下文来提示大模型。然而这些输入可能不足以充分激发大模型的推理能力。我们由此受到启发：来自网页、日志等外部来源的丰富语义数据，可以作为观测数据之外的一种额外模态来改进提示。在多种数据集上，MATMCD 相比最好的基线，把因果发现的误差（NHD）最多降低 66.7%，把根因定位（MAP@10）最多提升 83.3%。">
+          Hybrid methods for causal discovery typically prompt LLMs with the prior causal graph
+          produced by some SCD algorithm, appended by some meta-data such as variable names and
+          dataset titles as contexts. However, these inputs may fall short in fully activating the
+          reasoning ability of LLMs. We were inspired by the observation that abundant semantic data
+          from external sources, such as webs and logs, can serve as an additional modality to the
+          observational data for improving prompts. On a variety of datasets, MATMCD reduces causal
+          discovery errors (NHD) by up to 66.7% and improves root cause locating (MAP@10) by up to
+          83.3% over the best baselines.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="band" id="method">
+  <div class="band-inner">
+    <div class="band-label" data-zh="方法">Method</div>
+    <div class="band-body">
+      <h2 data-zh="围绕一个统计估计器的两个智能体">Two agents around a statistical estimator</h2>
+
+      <div class="run-in">
+        <figure class="inset">
+          <div class="plate">
+            <img src="assets/fig3.png" alt="The search tool preparation in DA-agent for the web search tool and the log lookup tool.">
+          </div>
+          <figcaption data-zh="DA-agent 中搜索工具的准备：(a) 网页搜索工具，(b) 日志查询工具。">
+            The search tool preparation in DA-agent for (a) the web search tool, and (b) the log lookup
+            tool.
+          </figcaption>
+        </figure>
+        <p data-zh="<b>因果图估计器</b>它是因果图的初始化器，建立在数据驱动的 SCD 算法之上，目标是仅凭观测数据、不接触任何其他信息，估计出一个初始因果图。我们的框架对 SCD 算法的选择是灵活的。本文考察了三种被广泛使用的算法，每一种各自代表一类方法：基于约束的 Peter-Clark（PC）算法，属非参数方法；基于打分的 Exact Search（ES）算法，同属非参数方法；以及受约束的函数型因果模型 DirectLiNGAM，属半参数方法。">
+          <b>Causal Graph Estimator</b> It serves as an initializer of causal graph and is built upon
+          data-driven SCD algorithms, with the aim of estimating an initial causal graph purely from
+          the observational data without accessing any other information. Our framework is flexible to
+          the choice of SCD algorithms. In this work, we investigate the feasibility of employing three
+          widely used algorithms, each of which is a representative of a category: the constraint-based
+          Peter-Clark (PC) algorithm, which is non-parametric; the score-based Exact Search (ES)
+          algorithm, which is non-parametric; and the constrained functional causal model
+          DirectLiNGAM, which is semi-parametric.
+        </p>
+        <p data-zh="<b>DA-agent</b>数据增强智能体的目标，是检索与初始因果图相关的、语义丰富的上下文数据，例如关于各变量的网页文档与日志文件，作为观测数据之外的一种额外模态。收到关于因果图的元数据后，Search LLM 先检查其调用历史记忆，判断是否需要发起新的工具调用。若需要，Search LLM 会用一段包含数据集标题与变量名的提示去调用搜索工具 API 以检索额外数据，并把这次搜索动作记入记忆以备后续参考。在随后的迭代中，此前记录的全部查询都会被检视，以避免重复查询。当大模型给出“No query needed”的结论时，循环终止。">
+          <b>DA-agent</b> The goal of the Data Augmentation agent is to retrieve semantics-rich
+          contextual data pertinent to the initial causal graph, such as web documents and log files
+          about the variables, as an additional modality to observational data. Upon receiving the
+          meta-data about the causal graph, the Search LLM first checks its calling history memory to
+          decide whether to initiate a new tool call. If a new call is needed, the Search LLM invokes a
+          search tool API to retrieve additional data using a prompt that includes the dataset title
+          and the variable names, and this search action is recorded in the memory for future
+          reference. In subsequent iterations, all previously recorded queries are examined to prevent
+          redundant queries. The loop terminates when the LLM concludes with a “No query needed”
+          response.
+        </p>
+        <p data-zh="<b>工具准备</b>在网页搜索工具中，我们采用 Google 搜索 API，查询由 Search LLM 生成。检索到的排名靠前的网页会先经数据格式化器去格式化（例如去掉 HTML 标签），所得纯文本文档存入记忆；随后由 Web-Summary LLM 把这些文档概括成一段简洁的描述。相比之下，日志查询工具采用精确查找，即以变量名为关键词，直接取回其对应的日志。因此记忆可以省去；取回的日志仍需去格式化（例如去掉日志模板）且可能很长，将由 Log-Summary LLM 加以总结。">
+          <b>Tool preparation</b> In the web search tool we employ Google search API where the query is
+          generated by the Search LLM. The retrieved top webpages will be de-formatted, for example by
+          removing HTML tags, by a data formatter, and the resultant plain docs will be stored in a
+          memory; then a Web-Summary LLM is employed to summarize the docs into a concise description.
+          In contrast, the Log Lookup tool uses exact lookup, that is, with a variable name as the
+          keyword, its corresponding log can be retrieved directly. Thus the memory can be removed, and
+          the retrieved log, which still needs de-formatting such as removing log templates and could
+          be lengthy, will be summarized by a Log-Summary LLM.
+        </p>
+        <p data-zh="<b>Summary LLM</b>Search LLM 检索到的数据会被迭代地加入检索数据记忆。循环终止后，Summary LLM 把检索到的数据总结为三类线索：数据集的描述；图中每个变量的描述；以及变量之间的关系。由于迭代搜索所得数据的规模可能超出大模型的上下文窗口，我们采用基于 RAG 的高效总结方式，以 LlamaIndex 实现，用 text-embedding-ada-002 为文档块建立索引，并以最大内积搜索检索相关的文档块。">
+          <b>Summary LLM</b> The data retrieved by the Search LLM is iteratively added to the Retrieved
+          Data Memory. Upon loop termination, a Summary LLM summarizes the retrieved data into three
+          types of cues: a description of the dataset; a description of each variable in the graph; and
+          relationships between the variables. Since the size of the retrieved data from iterative
+          searches may exceed the LLM's context window, we adopt an efficient summarization approach
+          using RAG, implemented with LlamaIndex using <code>text-embedding-ada-002</code> for chunk
+          indexing and Maximum Inner Product Search for retrieving relevant chunks.
+        </p>
+        <p data-zh="<b>CC-agent</b>除外部知识之外，我们的方法还利用大模型在预训练中获得的事实性知识。因果约束智能体基于零样本思维链的两阶段提示框架设计。首先，提示构建器把以邻接表表示的初始因果图与来自 DA-agent 的上下文数据整合起来，用以提示 Knowledge LLM，由它依据上下文数据与自身知识，解释初始因果图中每一条存在或不存在的因果关系。这些既可能支持也可能否定因果关系的解释，在第二阶段被用来提示 Constraint LLM，对每条关系是否存在给出结论。为应对结论中可能存在的不确定性，我们采用 Top-K-Guess 技术引出语言化的置信度；在 Top-K 个猜测中，置信度最高的一个被选作最终结论。">
+          <b>CC-agent</b> In addition to the external knowledge, our method leverages the factual
+          knowledge stored in LLMs, acquired during pre-training. The Causal Constraint agent is
+          designed based on the Two-Stage Prompting framework of zero-shot Chain-of-Thought. First, a
+          prompt builder integrates the initial causal graph, represented as an adjacency list, with
+          contextual data from DA-agent to prompt a Knowledge LLM, which is tasked with explaining each
+          existing and non-existing causal relationship in the initial causal graph based on the
+          contextual data and its own knowledge. These explanations, which could either support or
+          refute the causal relationships, are used to prompt a Constraint LLM in the second stage to
+          draw a conclusion on the existence of each relationship. To address potential uncertainty in
+          the conclusions, we adopt the Top-K-Guess technique to elicit verbal confidence; among the
+          Top-K guesses, the most confident one is selected as the final conclusion.
+        </p>
+        <p data-zh="<b>因果图修正器</b>为保证最终因果图无环，边集不会依据 CC-agent 给出的存在／不存在约束被直接修改，而是把因果图估计器所用的 SCD 算法在这些约束下重新运行，生成新的因果图。系统会构造一个约束矩阵：若 CC-agent 判定某个变量对另一个变量存在因果作用，则相应元素为 1，否则为 0。PC、ES 与 DirectLiNGAM 等最具代表性的 SCD 算法，本就被设计为可在观测数据之外接受这样的约束矩阵作为输入，从而保证生成的因果图既符合所施加的约束，又是一个有向无环图。">
+          <b>Causal Graph Refiner</b> To ensure the final causal graph is acyclic, the edge set is not
+          directly modified based on the existence and non-existence constraints from CC-agent.
+          Instead, the SCD algorithm used in the Causal Graph Estimator is rerun with these constraints
+          imposed to generate a new causal graph. A constraint matrix is constructed in which an entry
+          is 1 if CC-agent indicates a causal effect from one variable to another, and 0 otherwise. The
+          most representative SCD algorithms, including PC, ES and DirectLiNGAM, are designed to
+          incorporate such a constraint matrix as input alongside observational data, which ensures
+          that the generated causal graph complies with the constraints and is a directed acyclic
+          graph.
+        </p>
+      </div>
+
+      <figure>
+        <div class="plate">
+          <img src="assets/fig2.png" alt="An illustration of the MATMCD framework, with the inner workings of DA-agent and CC-agent.">
+        </div>
+        <figcaption data-zh="MATMCD 框架示意：框架总览、DA-agent 的内部工作机制，以及 CC-agent 的内部工作机制。">
+          An illustration of the MATMCD framework: an overview of the framework, the inner working of
+          DA-agent, and the inner working of CC-agent.
+        </figcaption>
+      </figure>
+
+    </div>
+  </div>
+</section>
+
+<section class="band" id="results">
+  <div class="band-inner">
+    <div class="band-label" data-zh="结果">Results</div>
+    <div class="band-body">
+      <h2 data-zh="在五个基准数据集上取得最佳的整体性能">The best overall performance across five benchmarks</h2>
+
+      <div class="prose">
+        <p data-zh="为求全面，我们使用五个基准数据集，同时覆盖连续变量与离散变量：AutoMPG，含五个变量，关于城市工况下以英里／加仑计的燃油消耗；DWDClimate，含六个变量，与德国气象局气象站的观测有关；SachsProtein，含十一个变量，度量人体细胞中不同蛋白质与磷脂的表达水平；Asia，含八个变量，与肺部疾病诊断相关；以及 Child，含二十个变量，关于新生儿的先天性心脏病。默认情况下，所有基于大模型的方法与混合方法都以温度 0.5 的 GPT-4o mini 作为基础大模型，所有混合方法都以 PC 作为基础 SCD 算法。">
+          To be comprehensive, we use five benchmark datasets covering both continuous variables and
+          discrete variables: AutoMPG, which has five variables concerning city-cycle fuel consumption
+          in miles per gallon; DWDClimate, which has six variables pertinent to observations from
+          weather stations in Deutscher Wetterdienst; SachsProtein, which has eleven variables
+          measuring the expression level of different proteins and phospholipids in human cells; Asia,
+          which has eight variables relevant to lung disease diagnosis; and Child, which has twenty
+          variables regarding congenital heart disease in newborn babies. By default we use GPT-4o mini
+          with temperature 0.5 as the base LLM for all LLM-based and hybrid methods, and PC is used as
+          the base SCD algorithm for all hybrid approaches.
+        </p>
+        <p data-zh="从下表可以得到几点观察。除与生物医学相关的 SachsProtein 与 Asia 数据集外，涉及大模型的方法在多数情况下优于 SCD 算法；这既显示了大模型在预训练中获得的常识知识对因果发现任务的巨大潜力，也提醒我们注意它们在领域专有知识上的欠缺。混合方法在多数情况下优于纯基于大模型的基线，说明把 SCD 的输出作为先验供大模型参考，有利于补足它们与因果作用相关的知识。能够借助工具检索外部数据的基线方法，即 ReAct 与 LLM-KBCI-RA，有时优于各自的对照，表明增强知识的潜力，但也呼唤更好的外部数据检索与使用方式。">
+          Several observations follow from the table below. Methods involving LLMs generally outperform
+          SCD algorithms in most cases except for the SachsProtein and Asia datasets, which pertain to
+          biomedicine; this demonstrates the great potential of LLMs' commonsense knowledge acquired by
+          pre-training for the task of causal discovery, but meanwhile draws our attention to their
+          shortage of domain-specific knowledge. Hybrid approaches outperform LLM-based baselines in
+          most cases, indicating that using SCD outputs as a prior for LLMs to reference has the
+          benefits of complementing their causal effects related knowledge. Baseline methods that can
+          leverage tools for retrieving external data, i.e. ReAct and LLM-KBCI-RA, sometimes outperform
+          their counterparts, suggesting the potential of the augmented knowledge, but calling for a
+          better way of retrieving and using external data.
+        </p>
+        <p data-zh="考虑到没有一个基线方法能在所有数据集上都表现良好，所提出的 MATMCD 与 MATMCD-RE 取得了最佳的整体性能。特别地，它们通过数据增强，缓解了其他大模型基线在生物医学数据集 SachsProtein 与 Asia 上的幻觉问题。这些结果凸显了现有大模型基线仅凭元数据（即节点名称、数据标题）推断因果作用的困难，也验证了我们为探索多模态增强的因果发现所提出的多智能体系统设计的有效性。最后，MATMCD-RE 在贝叶斯网络数据集 Asia 与 Child 上优于 MATMCD，这可能源自 Top-K Guess 推理为概率型数据集给出了更好校准的似然。">
+          The proposed MATMCD and MATMCD-RE achieved the best overall performance, considering that no
+          baseline method consistently performs well across all datasets. In particular, they help
+          alleviate the hallucination problem of other LLM baselines on the biomedical SachsProtein and
+          Asia datasets via data augmentation. The results highlight the challenge of the existing LLM
+          baselines in inferring causal effects solely by meta-data, i.e. node names and data titles,
+          and validate the effectiveness of the proposed design of a multi-agent system for exploring
+          multi-modality enhanced causal discovery. Finally, MATMCD-RE outperforms MATMCD on the
+          Bayesian datasets Asia and Child, which could be a result of the better calibrated
+          likelihoods by Top-K Guess reasoning for the probabilistic datasets.
+        </p>
+      </div>
+
+      <div>
+        <div class="controls">
+          <div class="ctl">
+            <span class="ctl-label" data-zh="变量类型">Variable type</span>
+            <div class="choices" id="vartype-seg">
+              <button data-v="cont" aria-pressed="true" data-zh="连续">Continuous</button>
+              <button data-v="disc" data-zh="离散">Discrete</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tablewrap">
+          <table class="data" id="main-table"><thead></thead><tbody></tbody></table>
+        </div>
+        <p class="note" data-zh="Prc 与 F1 衡量准确性，数值越大越好；FPR、SHD 与 NHD 衡量误差或差异，数值越小越好。每列最优以强调色标出，次优加下划线。带星号的数字取自该方法原论文，其结果仅在连续变量的数据集上可得。">
+          Prc and F1 measure the accuracy, thus a larger value is better; FPR, SHD and NHD measure the
+          errors or differences, hence a smaller value is better. The best value in each column is
+          marked in the accent colour and the second best is underlined. Numbers marked with an
+          asterisk are adopted from the paper of the method, which are only available on the datasets
+          with continuous variables.
+        </p>
+      </div>
+
+      <div class="prose">
+        <p data-zh="我们还考察 MATMCD(-RE) 如何修正 SCD 算法生成的因果图：把 AutoMPG 数据集的真实因果图，与 PC、MATMCD 和 MATMCD-RE 所产生的因果图放在一起可视化。相比 PC，MATMCD(-RE) 得到的图更接近真实因果结构，错加、遗漏与反向的边都更少，说明利用大模型智能体施加由多模态数据赋能的知识驱动约束、筛除错误边具有优势。相反，仅靠观测数据的 PC 更容易出错。此外，大模型提供的知识在确定因果方向上给出了精确指引，使得在多数数据集上反向的边更少。">
+          We also investigate how MATMCD(-RE) refines the causal graphs generated by SCD algorithms by
+          visualizing the true causal graph of the AutoMPG dataset, along with the causal graphs
+          produced by PC, MATMCD and MATMCD-RE. Compared to PC, MATMCD(-RE) yields graphs that resemble
+          the true causality better, with less wrongly added, missed, and reversed edges, suggesting
+          the advantage of leveraging LLM agents' ability to impose multi-modal data empowered
+          knowledge-driven constraints for screening erroneous edges. In contrast, PC alone relies
+          solely on observational data thus is more error-prone. Moreover, LLM-provided knowledge
+          offers precise guidance in establishing causal directions, resulting in fewer reversed edges
+          on most of the datasets.
+        </p>
+      </div>
+
+      <figure>
+        <div class="plate">
+          <img src="assets/fig4.png" alt="Causal graph visualization for the AutoMPG dataset.">
+        </div>
+        <figcaption data-zh="AutoMPG 数据集的因果图可视化。红色（蓝色）箭头表示被错误添加（反向）的边。每个子标题给出错加、遗漏与反向边的数量以便比较。">
+          Causal graph visualization for the AutoMPG dataset. Red (blue) arrows indicate edges that are
+          wrongly added (reversed). Each sub-caption includes the number of wrongly added, missed, and
+          reversed edges for comparison.
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="ablation">
+  <div class="band-inner">
+    <div class="band-label" data-zh="消融">Ablation</div>
+    <div class="band-body">
+      <h2 data-zh="迭代搜索、独立的 Knowledge LLM，以及 PC">Iterative search, a separate Knowledge LLM, and PC</h2>
+
+      <div class="prose">
+        <p data-zh="消融分析使用三个数据集，MATMCD 为我们的原始模型。为研究 DA-agent 中迭代搜索的作用，我们把迭代搜索替换为单轮搜索模板；为评估 CC-agent 中 Knowledge LLM 的效果，我们将其移除，这等价于把 Knowledge LLM 与 Constraint LLM 合并为一个大模型；为考察 MATMCD 对不同 SCD 算法的泛化能力，我们把 PC 换成 ES 与 DirectLiNGAM；最后，我们评估不同大模型对因果发现的影响。">
+          The ablation analysis uses three datasets, with MATMCD as our original model. We study the
+          usefulness of the iterative search in DA-agent by replacing it with a single-round search
+          template; we assess the effectiveness of the Knowledge LLM in CC-agent by removing it from
+          CC-agent, which is equivalent to merging the Knowledge LLM and the Constraint LLM into a
+          single LLM; we evaluate how MATMCD could generalize to different SCD algorithms by switching
+          PC with ES and DirectLiNGAM; and we assess the impact of different LLMs on causal discovery.
+        </p>
+        <p data-zh="我们观察到，迭代搜索优于单轮搜索，因为后者可能使用有偏的查询，难以产生全面的增强数据。为解释因果关系而保留一个独立的 Knowledge LLM，优于把它与 Constraint LLM 合并，说明二者在 CC-agent 中承担着不同角色。使用 PC 之外的 SCD 算法通常会使性能下降，可能是因为 PC 基于约束的设计能更好地利用大模型产生的约束；同时我们也观察到，配合 MATMCD 后，ES 与 DirectLiNGAM 的性能相较未使用 MATMCD 的对照略有提升。有趣的是，默认的 GPT-4o mini 在不同数据集上最为稳健，而 GPT-4 优于开源大模型。与 PC 相比，所有大模型变体都提升了性能，说明利用大模型确有成效。此外，在生物数据集 SachsProtein 上，更大的模型 GPT-4 进一步提升了因果发现性能，这可能得益于它与该特定领域更好的对齐。">
+          We observe that iterative search is better than single-round search, as the latter may use
+          biased query and have difficulty in producing comprehensive augmented data. Including a
+          separate Knowledge LLM for explaining causal relationships is better than merging it with the
+          Constraint LLM, suggesting their distinct roles in CC-agent. Using other SCD algorithms than
+          PC generally degrades the performance, possibly because the constraint-based design of PC
+          leads to better use of the constraints produced by LLMs; we also observe that, with MATMCD,
+          the performance of ES and DirectLiNGAM were slightly enhanced compared to the counterparts
+          without MATMCD. Intriguingly, the default GPT-4o mini is the most robust across different
+          datasets, and GPT-4 is better than the open source LLMs. Compared to PC, all LLM variants
+          improve performance, suggesting the effectiveness in leveraging the LLMs. Moreover, on the
+          biological dataset SachsProtein, a larger model GPT-4 further boost the causal discovery
+          performance, likely due to its better alignment with the specific domain.
+        </p>
+      </div>
+
+      <div>
+        <div class="tablewrap">
+          <table class="data" id="ablation-table"><thead></thead><tbody></tbody></table>
+        </div>
+        <p class="note" data-zh="对所提出的 MATMCD 方法在基准数据集上的消融分析。Prc 与 F1 衡量准确度，越大越好；FPR、SHD 与 NHD 衡量误差与差异，越小越好。">
+          Ablation analysis of the proposed MATMCD method on benchmark datasets. Prc and F1 measure
+          the accuracy, thus a larger value is better; FPR, SHD and NHD measure the
+          errors/differences, hence a smaller value is better.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="rca">
+  <div class="band-inner">
+    <div class="band-label" data-zh="根因分析">Root cause analysis</div>
+    <div class="band-body">
+      <h2 data-zh="把日志作为根因分析的一种模态">Logs as a modality for root cause analysis</h2>
+
+      <div class="prose">
+        <p data-zh="接下来，我们在从 Product Review（PR）与 Cloud Computing（CC）微服务系统采集的 AIOps 数据集上评估 MATMCD。PR 数据集有 216 个变量（即系统 pod），每个变量对应一条包含 6 项指标（例如 CPU、内存占用）、长度为 131,329 的多元时间序列。CC 数据集有 168 个变量，每个变量对应一条包含 7 项指标、长度为 109,351 的多元时间序列。在这两个数据集中，每个变量还有一份记录其历史事件的日志。通过日志查询工具，这些日志可以被 MATMCD 用作额外的数据模态，以增强因果发现。下图表明，DA-agent 的 Summary LLM 能够有效地解读并总结日志数据。">
+          Next, we evaluate MATMCD on AIOps datasets collected from Product Review (PR) and Cloud
+          Computing (CC) microservice systems. The PR dataset has 216 variables, i.e. system pods, each
+          associated with a multivariate time series containing 6 metrics, such as CPU and memory
+          usage, of length 131,329. The CC dataset has 168 variables, each with a multivariate time
+          series of 7 metrics and a length of 109,351. In both datasets, each variable also has a log
+          recording its historical events. Through the log lookup tool, these logs can be leveraged as
+          an additional data modality by MATMCD for enhanced causal discovery. The figure below
+          demonstrates that the Summary LLM of DA-agent can effectively interpret and summarize the log
+          data.
+        </p>
+        <p data-zh="由于这些数据集给出了领域专家标定的系统故障根因，却缺少真实的因果图，我们用它们来评估基于不同方法所产生因果图的根因分析性能。若在一张因果图上运行带重启的随机游走能把根因排在所有变量的前列，就说明该因果图质量较好；因此我们采用被广泛使用的 Mean Average Precision@K（K 取 5 与 10）与 Mean Reciprocal Rank，评估在两个数据集上的整体排序性能。借助日志这一模态，MATMCD(-RE) 在两个数据集上都显著提升了根因定位的准确性，在 MAP@10 上相对最好的基线取得 83.3% 的相对提升。这凸显了把微服务系统中普遍存在的日志数据整合进 RCA 与 AIOps 的潜力。">
+          Since these datasets provide root causes of system failures identified by domain experts, but
+          lack ground truth causal graphs, we use them to evaluate the root cause analysis performance
+          based on the causal graphs produced by different methods. If running a random walk with
+          restart on a causal graph can top-rank the root cause among all variables, it reflects the
+          quality of the causal graph; therefore we use the widely adopted Mean Average Precision@K,
+          with K set to 5 and 10, and Mean Reciprocal Rank, to assess the overall ranking performance
+          on both datasets. By leveraging the log modality, MATMCD(-RE) significantly improves the
+          accuracy of root cause locating on both datasets, with an 83.3% relative improvement over the
+          best baseline on MAP@10. This highlights the potential of integrating prevalent log data in
+          microservice systems for RCA and AIOps.
+        </p>
+      </div>
+
+      <div>
+        <div class="tablewrap">
+          <table class="data" id="rca-table"><thead></thead><tbody></tbody></table>
+        </div>
+        <p class="note" data-zh="MAP@5、MAP@10 与 MRR 越大越好。RK (P) 与 RK (C) 分别是不同方法预测出的根因在 Product Review 数据集与 Cloud Computing 数据集中的排名，越小越好。表中排除了 Exact Search 与 DirectLiNGAM，因为此处关注的是不同的大模型方法如何为下游任务改进其基础 SCD 算法，即 PC。">
+          Larger MAP@5, MAP@10 and MRR are better. RK (P) and RK (C) are the ranks of the root causes in
+          the Product Review dataset and the Cloud Computing dataset respectively, predicted by
+          different methods, and smaller is better. Exact Search and DirectLiNGAM are excluded as the
+          focus is how different LLM-based methods can improve their base SCD algorithm, i.e. PC, for
+          the downstream task.
+        </p>
+      </div>
+
+      <figure>
+        <div class="plate">
+          <img src="assets/fig5.png" alt="An illustration of a log of events and its summary provided by DA-agent.">
+        </div>
+        <figcaption data-zh="示意：(a) 事件日志，(b) DA-agent 给出的日志摘要。">
+          An illustration of (a) a log of events, and (b) its summary provided by DA-agent.
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="cite">
+  <div class="band-inner">
+    <div class="band-label" data-zh="引用">Citation</div>
+    <div class="band-body">
+      <h2 data-zh="引用本文">Cite this work</h2>
+      <div class="cite">
+        <div class="cite-head">
+          BibTeX
+          <button class="copy" id="copy-bib" data-zh="复制">Copy</button>
+        </div>
+<pre id="bibtex">@inproceedings{shen-etal-2025-exploring,
+  title     = {Exploring Multi-Modal Data with Tool-Augmented {LLM} Agents for Precise Causal Discovery},
+  author    = {Shen, ChengAo and Chen, Zhengzhang and Luo, Dongsheng and Xu, Dongkuan and Chen, Haifeng and Ni, Jingchao},
+  booktitle = {Findings of the Association for Computational Linguistics: ACL 2025},
+  address   = {Vienna, Austria},
+  publisher = {Association for Computational Linguistics},
+  pages     = {636--660},
+  year      = {2025}
+}</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-mark">MATMCD</div>
+      <p data-zh="ACL 2025 Findings · 休斯敦大学 D2I 组">
+        Findings of ACL 2025 · D2I Group, University of Houston
+      </p>
+      <p class="footer-contact">
+        <a href="mailto:cshen9@uh.edu">cshen9@uh.edu</a> ·
+        <a href="https://github.com/D2I-Group/matmcd/issues" data-zh="提交 issue">Open an issue</a>
+      </p>
+    </div>
+
+    <div class="footer-links">
+      <div>
+        <h3 data-zh="论文">Paper</h3>
+        <ul>
+          <li><a href="https://aclanthology.org/2025.findings-acl.36/">ACL Anthology</a></li>
+          <li><a href="https://arxiv.org/abs/2412.13667">arXiv:2412.13667</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 data-zh="代码">Code</h3>
+        <ul>
+          <li><a href="https://github.com/D2I-Group/matmcd">GitHub</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-related">
+      <h3 data-zh="D2I 组的其他工作">More from the D2I Group</h3>
+      <ul class="related">
+        <li>
+          <a href="https://d2i-group.github.io/metacaster/">MetaCaster: Meta-Harness-Optimized Agent for End-to-End Few-Shot Learning of Lightweight Time Series Forecasters</a>
+          <span class="meta">EMNLP 2026 · <a href="https://arxiv.org/abs/2608.23473">arXiv:2608.23473</a> · <a href="https://github.com/D2I-Group/metacaster">GitHub</a></span>
+        </li>
+        <li>
+          <a href="https://github.com/D2I-Group/dmmv">Multi-Modal View Enhanced Large Vision Models for Long-Term Time Series Forecasting</a>
+          <span class="meta">NeurIPS 2025 · <a href="https://arxiv.org/abs/2505.24003">arXiv:2505.24003</a></span>
+        </li>
+        <li>
+          <a href="https://github.com/D2I-Group/awesome-vision-time-series">Harnessing Vision Models for Time Series Analysis: A Survey</a>
+          <span class="meta">IJCAI 2025 · <a href="https://www.arxiv.org/abs/2502.08869">arXiv:2502.08869</a></span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<script src="static/js/core.js"></script>
+<script src="static/js/main.js"></script>
+</body>
+</html>
